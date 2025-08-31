@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/Config/">
+    <File Path=".dockerignore" />
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path=".npmrc" />
+    <File Path="LICENSE" />
+    <File Path="NuGet.config" />
+    <File Path="SECURITY.md" />
+  </Folder>
+  <Folder Name="/Integrations/">
+    <Project Path="src/KeyLens.Azure.EntraId/KeyLens.Azure.EntraId.csproj" Id="96a739ad-9049-4450-abce-8e02d1dff89f" />
+    <Project Path="src/KeyLens.Azure.KeyVault/KeyLens.Azure.KeyVault.csproj" />
+  </Folder>
+  <Project Path="src/KeyLens.Api/KeyLens.Api.csproj" />
+  <Project Path="src/KeyLens.App/KeyLens.App.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="src/KeyLens/KeyLens.csproj" />
+</Solution>
