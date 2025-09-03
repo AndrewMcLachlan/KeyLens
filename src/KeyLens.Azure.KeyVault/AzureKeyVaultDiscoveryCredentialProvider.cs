@@ -1,6 +1,4 @@
-﻿
-using System.Runtime.CompilerServices;
-using Azure;
+﻿using System.Runtime.CompilerServices;
 using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.KeyVault;
@@ -17,48 +15,42 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
 
     public async IAsyncEnumerable<CredentialRecord> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Get all subscriptions the user has access to
+        var allVaults = new List<(KeyVaultResource vault, SubscriptionData subscription)>();
+
+        // First, collect all vaults from all subscriptions
         await foreach (var subscription in armClient.GetSubscriptions().GetAllAsync(cancellationToken))
         {
-            // Get all Key Vaults in each subscription
             await foreach (var keyVault in subscription.GetKeyVaultsAsync(cancellationToken: cancellationToken))
             {
-                // Skip vaults that don't have the necessary permissions or are disabled
-                if (keyVault.Data.Properties?.EnabledForDeployment != true &&
-                    keyVault.Data.Properties?.EnabledForTemplateDeployment != true &&
-                    keyVault.Data.Properties?.EnabledForDiskEncryption != true)
-                {
-                    // Try to access anyway - some vaults might not have these flags but still be accessible
-                }
-
-                // Create a SecretClient for this specific vault
-                var vaultUri = keyVault.Data.Properties?.VaultUri;
-                if (vaultUri == null) continue;
-
-                var certificateClient = new CertificateClient(vaultUri, tokenCredential);
-
-                // Enumerate secrets from this vault
-                await foreach (var credential in EnumerateVaultCertificatesAsync(certificateClient, keyVault.Data.Name, subscription.Data, cancellationToken))
-                {
-                    yield return credential;
-                }
-
-                var keyClient = new KeyClient(vaultUri, tokenCredential);
-
-                // Enumerate secrets from this vault
-                await foreach (var credential in EnumerateVaultKeysAsync(keyClient, keyVault.Data.Name, subscription.Data, cancellationToken))
-                {
-                    yield return credential;
-                }
-
-                var secretClient = new SecretClient(vaultUri, tokenCredential);
-
-                // Enumerate secrets from this vault
-                await foreach (var credential in EnumerateVaultSecretsAsync(secretClient, keyVault.Data.Name, subscription.Data, cancellationToken))
-                {
-                    yield return credential;
-                }
+                allVaults.Add((keyVault, subscription.Data));
             }
+        }
+
+        // Process all vaults in parallel
+        var vaultTasks = allVaults.Select(async vaultInfo =>
+        {
+            var (keyVault, subscription) = vaultInfo;
+            var vaultUri = keyVault.Data.Properties?.VaultUri;
+            if (vaultUri == null) return Array.Empty<CredentialRecord>();
+
+            // Process all credential types in parallel for each vault
+            var tasks = new[]
+            {
+                EnumerateVaultCertificatesAsync(new CertificateClient(vaultUri, tokenCredential), keyVault.Data.Name, subscription, keyVault.Id, cancellationToken).ToListAsync(cancellationToken).AsTask(),
+                EnumerateVaultKeysAsync(new KeyClient(vaultUri, tokenCredential), keyVault.Data.Name, subscription, keyVault.Id, cancellationToken).ToListAsync(cancellationToken).AsTask(),
+                EnumerateVaultSecretsAsync(new SecretClient(vaultUri, tokenCredential), keyVault.Data.Name, subscription, keyVault.Id, cancellationToken).ToListAsync(cancellationToken).AsTask()
+            };
+
+            var results = await Task.WhenAll(tasks);
+            return results.SelectMany(x => x).ToArray();
+        });
+
+        var allResults = await Task.WhenAll(vaultTasks);
+
+        // Yield all results in sorted order
+        foreach (var credential in allResults.SelectMany(x => x).OrderBy(r => r.Container).ThenBy(r => r.CredentialId))
+        {
+            yield return credential;
         }
     }
 
@@ -66,6 +58,7 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
         CertificateClient certificateClient,
         string vaultName,
         SubscriptionData subscription,
+        string vaultResourceId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         List<CredentialRecord> results = [];
@@ -89,13 +82,14 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                         NotBefore: version.NotBefore,
                         ExpiresOn: version.ExpiresOn,
                         Enabled: version.Enabled.GetValueOrDefault(),
+                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{vaultResourceId}/certificates"),
                         Metadata: new
                         {
                             SubscriptionId = subscription.Id,
                             subscription.TenantId,
                             version.Tags,
                             version.X509ThumbprintString,
-                            version.RecoveryLevel
+                            version.RecoveryLevel,
                         }
                     ));
                 }
@@ -117,6 +111,7 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
         KeyClient keyClient,
         string vaultName,
         SubscriptionData subscription,
+        string vaultResourceId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         List<CredentialRecord> results = [];
@@ -140,12 +135,13 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                         NotBefore: version.NotBefore,
                         ExpiresOn: version.ExpiresOn,
                         Enabled: version.Enabled.GetValueOrDefault(),
+                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{vaultResourceId}/keys"),
                         Metadata: new
                         {
                             SubscriptionId = subscription.Id,
                             subscription.TenantId,
                             version.Tags,
-                            version.RecoveryLevel
+                            version.RecoveryLevel,
                         }
                     ));
                 }
@@ -167,15 +163,14 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
         SecretClient secretClient,
         string vaultName,
         SubscriptionData subscription,
+        string vaultResourceId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         List<CredentialRecord> results = [];
 
-        AsyncPageable<SecretProperties>? pages;
-
         try
         {
-            pages = secretClient.GetPropertiesOfSecretsAsync(cancellationToken);
+            var pages = secretClient.GetPropertiesOfSecretsAsync(cancellationToken);
 
             await foreach (var secretProps in pages.WithCancellation(cancellationToken))
             {
@@ -192,13 +187,13 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                         NotBefore: version.NotBefore,
                         ExpiresOn: version.ExpiresOn,
                         Enabled: version.Enabled.GetValueOrDefault(),
+                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{vaultResourceId}/secrets"),
                         Metadata: new
                         {
                             SubscriptionId = subscription.Id,
                             subscription.TenantId,
-
                             version.Tags,
-                            version.RecoveryLevel
+                            version.RecoveryLevel,
                         }
                     ));
                 }

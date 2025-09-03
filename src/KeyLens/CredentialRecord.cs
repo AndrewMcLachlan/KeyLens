@@ -10,5 +10,6 @@ public sealed record CredentialRecord(
     DateTimeOffset? NotBefore,
     DateTimeOffset? ExpiresOn,
     bool Enabled,
+    Uri? CredentialUri = null, // link to portal or other UI
     dynamic? Metadata = null
 );

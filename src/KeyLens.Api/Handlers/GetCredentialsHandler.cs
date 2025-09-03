@@ -7,13 +7,25 @@ public static class GetCredentialsHandler
         CancellationToken cancellationToken = default)
     {
         var results = new List<CredentialRecord>();
-        foreach (var provider in credentialProviders)
+
+        var tasks = credentialProviders.Select(async provider =>
         {
+            var providerResults = new List<CredentialRecord>();
             await foreach (var credential in provider.EnumerateAsync(cancellationToken))
             {
-                results.Add(credential);
+                providerResults.Add(credential);
             }
+            return providerResults;
+        });
+
+        var allProviderResults = await Task.WhenAll(tasks);
+
+        foreach (var providerResults in allProviderResults)
+        {
+            results.AddRange(providerResults);
         }
-        return Results.Ok(results);
+
+        return Results.Ok(results.OrderBy(r => r.ExpiresOn.HasValue ? 0 : 1)
+                                 .ThenBy(r => r.ExpiresOn));
     }
 }

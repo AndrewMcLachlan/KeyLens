@@ -1,9 +1,10 @@
-using System.Reflection;
+using System.Text.Json.Serialization;
 using Asm.AspNetCore.Authentication;
-using Asm.OAuth;
 using Asp.Versioning;
 using KeyLens;
 using KeyLens.Api.Handlers;
+using KeyLens.Api.Models;
+using KeyLens.Api.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 const string ApiPrefix = "/api";
@@ -16,14 +17,35 @@ static void AddServices(WebApplicationBuilder builder)
     {
         builder.Logging.AddConsole();
         builder.Logging.AddDebug();
-        builder.Configuration.AddUserSecrets(Assembly.GetExecutingAssembly());
     }
 
     builder.Services.AddHttpContextAccessor();
 
-    //builder.Services.AddOpenApi();
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.ConfigureHttpJsonOptions(options =>
+    {
+        options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
+    builder.Services.AddOpenApi("v1", options =>
+    {
+        /*options.AddDocumentTransformer((document, context, cancellationToken) =>
+        {
+            // Remove /api prefix from all paths
+            var newPaths = new Dictionary<string, Microsoft.OpenApi.Models.OpenApiPathItem>();
+            foreach (var path in document.Paths)
+            {
+                var newPath = path.Key.StartsWith(ApiPrefix) ? path.Key[ApiPrefix.Length..] : path.Key;
+                newPaths[newPath] = path.Value;
+            }
+            document.Paths.Clear();
+            foreach (var path in newPaths)
+            {
+                document.Paths.Add(path.Key, path.Value);
+            }
+
+            return Task.CompletedTask;
+        });*/
+    });
 
     builder.Services.AddApiVersioning(options =>
     {
@@ -40,6 +62,8 @@ static void AddServices(WebApplicationBuilder builder)
     builder.Services.AddKeyVaultCredentialProviders();
     builder.Services.AddEntraIdCredentialProviders();
 
+    builder.Services.Configure<OAuthOptions>(options => builder.Configuration.Bind("OAuth", options));
+
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddStandardJwtBearer(options =>
     {
         options.Events.OnAuthenticationFailed = context =>
@@ -48,22 +72,18 @@ static void AddServices(WebApplicationBuilder builder)
             return Task.CompletedTask;
         };
 
-        AzureOAuthOptions oAuthOptions = builder.Configuration.GetSection("OAuth").Get<AzureOAuthOptions>() ?? throw new InvalidOperationException("OAuth config not defined");
+        Asm.OAuth.AzureOAuthOptions oAuthOptions = builder.Configuration.GetSection("OAuth").Get<Asm.OAuth.AzureOAuthOptions>() ?? throw new InvalidOperationException("OAuth config not defined");
         options.OAuthOptions = oAuthOptions;
     });
 
-    builder.Services.AddAuthorizationBuilder()
-        .SetFallbackPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .Build());
+    builder.Services.AddAuthorization();
 }
 static void AddApp(WebApplication app)
 {
     app.UseDefaultFiles();
     app.UseStaticFiles();
 
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
 
     app.UseAuthentication();
     app.UseAuthorization();
@@ -71,6 +91,13 @@ static void AddApp(WebApplication app)
     var api = app.NewVersionedApi().MapGroup($"{ApiPrefix}/v{{version:apiVersion}}").WithOpenApi();
 
     var v1 = api.HasApiVersion(1.0);
+
+    v1.MapGet("/config", GetConfigHandler.Handle)
+        .WithName("GetConfig")
+        .WithSummary("Get API configuration")
+        .WithDescription("Get configuration information for the API.")
+        .Produces<Config>(StatusCodes.Status200OK)
+        .AllowAnonymous();
 
     v1.MapGet("/credentials", GetCredentialsHandler.HandleAsync)
         .WithName("GetCredentials")

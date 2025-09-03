@@ -11,10 +11,10 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
     public string Name => "Azure.EntraId.Discovery";
 
     public IEnumerable<string> RequiredPermissions() =>
-[
-    "Application.Read.All",
-        "Directory.Read.All"
-];
+    [
+        "Application.Read.All",
+        "Directory.Read.All",
+    ];
 
     public async IAsyncEnumerable<CredentialRecord> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -49,7 +49,6 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
             {
                 foreach (var app in applications.Value)
                 {
-                    // Process password credentials (secrets)
                     if (app.PasswordCredentials != null)
                     {
                         foreach (var passwordCred in app.PasswordCredentials)
@@ -64,6 +63,7 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
                                 NotBefore: passwordCred.StartDateTime,
                                 ExpiresOn: passwordCred.EndDateTime,
                                 Enabled: true, // Password credentials don't have an enabled property
+                                CredentialUri: new Uri($"https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{app.AppId}/isMSAApp/"),
                                 Metadata: new
                                 {
                                     app.AppId,
@@ -74,7 +74,6 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
                         }
                     }
 
-                    // Process key credentials (certificates)
                     if (app.KeyCredentials != null)
                     {
                         foreach (var keyCred in app.KeyCredentials)
@@ -89,6 +88,7 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
                                 NotBefore: keyCred.StartDateTime,
                                 ExpiresOn: keyCred.EndDateTime,
                                 Enabled: true, // Key credentials don't have an enabled property
+                                CredentialUri: new Uri($"https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{app.AppId}/isMSAApp/"),
                                 Metadata: new
                                 {
                                     app.AppId,
@@ -119,6 +119,7 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
                                     NotBefore: passwordCred.StartDateTime,
                                     ExpiresOn: passwordCred.EndDateTime,
                                     Enabled: true,
+                                    CredentialUri: new Uri($"https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{app.AppId}/isMSAApp/"),
                                     Metadata: new
                                     {
                                         app.AppId,
@@ -129,7 +130,6 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
                             }
                         }
 
-                        // Process key credentials (certificates)
                         if (app.KeyCredentials != null)
                         {
                             foreach (var keyCred in app.KeyCredentials)
@@ -144,6 +144,7 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
                                     NotBefore: keyCred.StartDateTime,
                                     ExpiresOn: keyCred.EndDateTime,
                                     Enabled: true,
+                                    CredentialUri: new Uri($"https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{app.AppId}/isMSAApp/"),
                                     Metadata: new
                                     {
                                         app.AppId,
@@ -154,7 +155,7 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
                             }
                         }
 
-                        return true; // Continue iteration
+                        return true;
                     });
 
                 await pageIterator.IterateAsync(cancellationToken);
@@ -162,7 +163,7 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
         }
         catch (Exception)
         {
-            // Skip if we can't access applications in this tenant
+            // TODO: better error handling/logging
         }
 
         foreach (var record in results.OrderBy(r => r.Container).ThenBy(r => r.CredentialId))
