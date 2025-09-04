@@ -1,0 +1,117 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Build
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request_target:
+    branches:
+      - "main"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      pull-requests: write
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+
+      with:
+        dotnet-version: 9.x
+        source-url: https://nuget.pkg.github.com/AndrewMcLachlan/index.json
+      env:
+        NUGET_AUTH_TOKEN: ${{secrets.CROSS_REPO_PACKAGE_TOKEN}}
+    - name: Set version number
+      id: set-version-number
+      uses: andrewmclachlan/actions/set-version-number@v4
+      with:
+        project: 'src/KeyLens.Api'
+        version-property-name: 'Version'
+    - name: Restore dependencies
+      run: dotnet restore KeyLens.slnx
+    - name: Setup node and npm
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: 'src/KeyLens.App/package-lock.json'
+        registry-url: "https://npm.pkg.github.com"
+    - name: Publish
+      run: dotnet publish src/KeyLens.Api/KeyLens.Api.csproj --output ${{ github.workspace }}/publish --configuration Release --p:Version=${{ steps.set-version-number.outputs.version }} --p:FileVersion=${{ steps.set-version-number.outputs.version }} --no-restore
+    - name: Install App dependencies
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.CROSS_REPO_PACKAGE_TOKEN }}
+      run: npm ci --prefix src/KeyLens.App --force
+    - name: Version App
+      run: npm version ${{ steps.set-version-number.outputs.version }} --prefix src/KeyLens.App --force
+    - name: Build App
+      run: npm run build --prefix src/KeyLens.App
+    - name: Copy App
+      run: cp -r src/KeyLens.App/dist ${{ github.workspace }}/publish/wwwroot
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: publish
+        path: ${{ github.workspace }}/publish
+
+  staging:
+    concurrency:
+      group: keylens-deploy-group
+      cancel-in-progress: true
+    needs: build
+    if: (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && github.ref == 'refs/heads/main')
+    uses: AndrewMcLachlan/actions/.github/workflows/deploy-azure.yml@v4
+    with:
+      environment: Staging
+      artifact-name: publish
+      app-name: keylens
+      slot-name: staging
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  production:
+    concurrency:
+      group: keylens-deploy-group
+      cancel-in-progress: true
+    needs: staging
+    if: (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && github.ref == 'refs/heads/main')
+    uses: AndrewMcLachlan/actions/.github/workflows/azure-appservice-swap-slot.yml@v4
+    with:
+      environment: Production
+      app-name: keylens
+      slot-name: staging
+      resource-group: KeyLens
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  post-production:
+    concurrency:
+      group: keylens-deploy-group
+      cancel-in-progress: true
+    needs: production
+    if: (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && github.ref == 'refs/heads/main')
+    uses: AndrewMcLachlan/actions/.github/workflows/deploy-azure.yml@v4
+    with:
+      environment: Post-Production
+      artifact-name: publish
+      app-name: keylens
+      slot-name: staging
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
