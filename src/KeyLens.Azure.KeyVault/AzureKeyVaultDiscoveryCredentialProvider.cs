@@ -1,4 +1,4 @@
-﻿ using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.KeyVault;
@@ -6,10 +6,11 @@ using Azure.ResourceManager.Resources;
 using Azure.Security.KeyVault.Certificates;
 using Azure.Security.KeyVault.Keys;
 using Azure.Security.KeyVault.Secrets;
+using Microsoft.Extensions.Logging;
 
 namespace KeyLens.Azure.KeyVault;
 
-public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, TokenCredential tokenCredential) : ICredentialProvider
+public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, TokenCredential tokenCredential, ILogger<AzureKeyVaultDiscoveryCredentialProvider> logger) : ICredentialProvider
 {
     public string Name => "Azure.KeyVault.Discovery";
 
@@ -25,6 +26,8 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                 allVaults.Add((keyVault, subscription.Data));
             }
         }
+
+        logger.LogInformation("Discovered {count} vaults", allVaults.Count);
 
         // Process all vaults in parallel
         var vaultTasks = allVaults.Select(async vaultInfo =>

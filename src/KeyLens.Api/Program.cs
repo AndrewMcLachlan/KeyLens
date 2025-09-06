@@ -91,7 +91,6 @@ static void AddApp(WebApplication app)
         .Produces<List<CredentialRecord>>(StatusCodes.Status200OK)
         .RequireAuthorization();
 
-
     app.UseSecurityHeaders();
 
     app.MapFallbackToFile("/index.html");

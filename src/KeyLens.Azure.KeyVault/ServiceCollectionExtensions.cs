@@ -1,11 +1,10 @@
-﻿using Azure.Core;
-using Azure.Identity;
+﻿using Azure.Identity;
 using Azure.ResourceManager;
 using KeyLens;
 using KeyLens.Azure.KeyVault;
 using KeyLens.Options;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -23,6 +22,7 @@ public static class ServiceCollectionExtensions
         {
             var options = provider.GetRequiredService<IOptions<OAuthOptions>>();
             var accessTokenProvider = provider.GetRequiredService<IAccessTokenProvider>();
+            var logger = provider.GetRequiredService<ILogger<AzureKeyVaultDiscoveryCredentialProvider>>();
 
             var accessToken = accessTokenProvider.GetAccessToken();
 
@@ -31,10 +31,17 @@ public static class ServiceCollectionExtensions
                 clientId: options.Value.Audience,
                 clientSecret: options.Value.ClientSecret,
                 userAssertion: accessToken,
-                options: new());
+                options: new()
+                {
+                    Diagnostics =
+                    {
+                        IsLoggingContentEnabled = logger.IsEnabled(LogLevel.Debug),
+                        IsLoggingEnabled = logger.IsEnabled(LogLevel.Debug),
+                    },
+                });
 
             var armClient = provider.GetRequiredService<ArmClient>();
-            return new AzureKeyVaultDiscoveryCredentialProvider(armClient, credential);
+            return new AzureKeyVaultDiscoveryCredentialProvider(armClient, credential, logger);
         });
 
         return services;
