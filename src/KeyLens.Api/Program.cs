@@ -2,9 +2,10 @@ using System.Text.Json.Serialization;
 using Asm.AspNetCore.Authentication;
 using Asp.Versioning;
 using KeyLens;
+using KeyLens.Api;
 using KeyLens.Api.Handlers;
 using KeyLens.Api.Models;
-using KeyLens.Api.Options;
+using KeyLens.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 const string ApiPrefix = "/api";
@@ -20,6 +21,7 @@ static void AddServices(WebApplicationBuilder builder)
     }
 
     builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IAccessTokenProvider, HttpContextAccessTokenProvider>();
 
     builder.Services.ConfigureHttpJsonOptions(options =>
     {
@@ -28,23 +30,6 @@ static void AddServices(WebApplicationBuilder builder)
 
     builder.Services.AddOpenApi("v1", options =>
     {
-        /*options.AddDocumentTransformer((document, context, cancellationToken) =>
-        {
-            // Remove /api prefix from all paths
-            var newPaths = new Dictionary<string, Microsoft.OpenApi.Models.OpenApiPathItem>();
-            foreach (var path in document.Paths)
-            {
-                var newPath = path.Key.StartsWith(ApiPrefix) ? path.Key[ApiPrefix.Length..] : path.Key;
-                newPaths[newPath] = path.Value;
-            }
-            document.Paths.Clear();
-            foreach (var path in newPaths)
-            {
-                document.Paths.Add(path.Key, path.Value);
-            }
-
-            return Task.CompletedTask;
-        });*/
     });
 
     builder.Services.AddApiVersioning(options =>

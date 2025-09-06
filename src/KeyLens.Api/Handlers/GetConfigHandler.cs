@@ -1,5 +1,5 @@
 ﻿using KeyLens.Api.Models;
-using KeyLens.Api.Options;
+using KeyLens.Options;
 using Microsoft.Extensions.Options;
 
 namespace KeyLens.Api.Handlers;

@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+﻿ using System.Runtime.CompilerServices;
 using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.KeyVault;
@@ -31,7 +31,7 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
         {
             var (keyVault, subscription) = vaultInfo;
             var vaultUri = keyVault.Data.Properties?.VaultUri;
-            if (vaultUri == null) return Array.Empty<CredentialRecord>();
+            if (vaultUri == null) return [];
 
             // Process all credential types in parallel for each vault
             var tasks = new[]
