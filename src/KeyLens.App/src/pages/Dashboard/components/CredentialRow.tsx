@@ -3,8 +3,6 @@ import type { CredentialRecord } from "../../../api";
 
 export const CredentialRow: React.FC<CredentialRowProps> = ({ credential }) => {
     
-    const formatter = new Intl.RelativeTimeFormat(navigator.language, { style: 'long' });
-    
     const expiresOn = credential.expiresOn ? DateTime.fromISO(credential.expiresOn) : null;
 
     const expiresOnText = expiresOn ? expiresOn.toLocaleString({ weekday: 'short', month: 'short', day: '2-digit', year: '2-digit' }) : '-';

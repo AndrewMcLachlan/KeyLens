@@ -6,7 +6,7 @@ import { CredentialRow } from "./components/CredentialRow";
 
 export const Dashboard = () => {
 
-    const { data: credentials, isLoading, isError, error } = useGetCredentials();
+    const { data: credentials, isLoading } = useGetCredentials();
 
     return (
         <Page title="Dashboard">
