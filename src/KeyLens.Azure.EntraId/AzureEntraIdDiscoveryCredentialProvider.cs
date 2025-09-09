@@ -1,12 +1,13 @@
 ﻿using System.Runtime.CompilerServices;
 using Azure.Core;
+using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Tenant = (System.Guid TenantId, string DisplayName);
 
 namespace KeyLens.Azure.EntraId;
 
-public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCredential) : ICredentialProvider
+public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCredential, ILogger<AzureEntraIdDiscoveryCredentialProvider> logger) : ICredentialProvider
 {
     public string Name => "Azure.EntraId.Discovery";
 
@@ -23,15 +24,18 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
 
         var tenants = await GetGraphAccessibleTenantsAsync(graphClient, cancellationToken);
 
+        logger.LogDebug("Found {count} tenants", tenants.Count);
+
         foreach (var tenant in tenants)
-        // Enumerate app registrations from the tenant
-        await foreach (var credential in EnumerateAppRegistrationsAsync(graphClient, tenant, cancellationToken))
         {
-            yield return credential;
+            await foreach (var credential in EnumerateAppRegistrationsAsync(graphClient, tenant, cancellationToken))
+            {
+                yield return credential;
+            }
         }
     }
 
-    private static async IAsyncEnumerable<CredentialRecord> EnumerateAppRegistrationsAsync(
+    private async IAsyncEnumerable<CredentialRecord> EnumerateAppRegistrationsAsync(
         GraphServiceClient graphClient,
         Tenant tenant,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -47,58 +51,7 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
 
             if (applications?.Value != null)
             {
-                foreach (var app in applications.Value)
-                {
-                    if (app.PasswordCredentials != null)
-                    {
-                        foreach (var passwordCred in app.PasswordCredentials)
-                        {
-                            results.Add(new CredentialRecord(
-                                Provider: "Azure.EntraId",
-                                Container: app.DisplayName ?? "Unknown App",
-                                ContainerId: app.Id ?? String.Empty,
-                                CredentialId: passwordCred.KeyId?.ToString() ?? String.Empty,
-                                Kind: CredentialKind.Password,
-                                Name: passwordCred.DisplayName ?? "Password Credential",
-                                NotBefore: passwordCred.StartDateTime,
-                                ExpiresOn: passwordCred.EndDateTime,
-                                Enabled: true, // Password credentials don't have an enabled property
-                                CredentialUri: new Uri($"https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{app.AppId}/isMSAApp/"),
-                                Metadata: new
-                                {
-                                    app.AppId,
-                                    tenant.TenantId,
-                                    TenantDisplayName = tenant.DisplayName,
-                                }
-                            ));
-                        }
-                    }
-
-                    if (app.KeyCredentials != null)
-                    {
-                        foreach (var keyCred in app.KeyCredentials)
-                        {
-                            results.Add(new CredentialRecord(
-                                Provider: "Azure.EntraId",
-                                Container: app.DisplayName ?? "Unknown App",
-                                ContainerId: app.Id ?? String.Empty,
-                                CredentialId: keyCred.KeyId?.ToString() ?? String.Empty,
-                                Kind: CredentialKind.Certificate,
-                                Name: keyCred.DisplayName ?? "Certificate Credential",
-                                NotBefore: keyCred.StartDateTime,
-                                ExpiresOn: keyCred.EndDateTime,
-                                Enabled: true, // Key credentials don't have an enabled property
-                                CredentialUri: new Uri($"https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{app.AppId}/isMSAApp/"),
-                                Metadata: new
-                                {
-                                    app.AppId,
-                                    tenant.TenantId,
-                                    TenantDisplayName = tenant.DisplayName,
-                                }
-                            ));
-                        }
-                    }
-                }
+                logger.LogDebug("Found {count} applications in {tenant}", applications.Value.Count, tenant.DisplayName);
 
                 // Handle pagination if there are more results
                 var pageIterator = PageIterator<Application, ApplicationCollectionResponse>
@@ -161,9 +114,9 @@ public class AzureEntraIdDiscoveryCredentialProvider(TokenCredential tokenCreden
                 await pageIterator.IterateAsync(cancellationToken);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // TODO: better error handling/logging
+            logger.LogError(ex, "Error getting app registration secrets");
         }
 
         foreach (var record in results.OrderBy(r => r.Container).ThenBy(r => r.CredentialId))

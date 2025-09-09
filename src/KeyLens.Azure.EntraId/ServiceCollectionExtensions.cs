@@ -3,6 +3,7 @@ using Azure.Identity;
 using KeyLens;
 using KeyLens.Azure.EntraId;
 using KeyLens.Options;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ public static class ServiceCollectionExtensions
         {
             var options = provider.GetRequiredService<IOptions<OAuthOptions>>();
             var accessTokenProvider = provider.GetRequiredService<IAccessTokenProvider>();
+            var logger = provider.GetRequiredService<ILogger<AzureEntraIdDiscoveryCredentialProvider>>();
 
             var accessToken = accessTokenProvider.GetAccessToken();
 
@@ -27,7 +29,7 @@ public static class ServiceCollectionExtensions
                 userAssertion: accessToken,
                 options: new());
 
-            return new AzureEntraIdDiscoveryCredentialProvider(credential);
+            return new AzureEntraIdDiscoveryCredentialProvider(credential, logger);
         });
 
         return services;

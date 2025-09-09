@@ -6,5 +6,5 @@ public record OAuthOptions : AzureOAuthOptions
 {
     public required string ClientSecret { get; init; }
 
-    public string? Scope { get; init; }
+    public required string Scope { get; init; }
 }

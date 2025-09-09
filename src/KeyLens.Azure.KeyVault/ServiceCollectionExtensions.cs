@@ -13,11 +13,6 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddKeyVaultCredentialProviders(this IServiceCollection services)
     {
-        services.AddAzureClients(configure =>
-        {
-            configure.AddArmClient(null);
-        });
-
         services.AddScoped<ICredentialProvider, AzureKeyVaultDiscoveryCredentialProvider>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<OAuthOptions>>();
@@ -40,7 +35,9 @@ public static class ServiceCollectionExtensions
                     },
                 });
 
-            var armClient = provider.GetRequiredService<ArmClient>();
+
+            var armClient = new ArmClient(credential);
+
             return new AzureKeyVaultDiscoveryCredentialProvider(armClient, credential, logger);
         });
 

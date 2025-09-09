@@ -36,12 +36,14 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
             var vaultUri = keyVault.Data.Properties?.VaultUri;
             if (vaultUri == null) return [];
 
+            var resourceGroupName = keyVault.Id.ResourceGroupName;
+
             // Process all credential types in parallel for each vault
             var tasks = new[]
             {
-                EnumerateVaultCertificatesAsync(new CertificateClient(vaultUri, tokenCredential), keyVault.Data.Name, subscription, keyVault.Id, cancellationToken).ToListAsync(cancellationToken).AsTask(),
-                EnumerateVaultKeysAsync(new KeyClient(vaultUri, tokenCredential), keyVault.Data.Name, subscription, keyVault.Id, cancellationToken).ToListAsync(cancellationToken).AsTask(),
-                EnumerateVaultSecretsAsync(new SecretClient(vaultUri, tokenCredential), keyVault.Data.Name, subscription, keyVault.Id, cancellationToken).ToListAsync(cancellationToken).AsTask()
+                EnumerateVaultCertificatesAsync(new CertificateClient(vaultUri, tokenCredential), keyVault, subscription, cancellationToken).ToListAsync(cancellationToken).AsTask(),
+                EnumerateVaultKeysAsync(new KeyClient(vaultUri, tokenCredential), keyVault, subscription, cancellationToken).ToListAsync(cancellationToken).AsTask(),
+                EnumerateVaultSecretsAsync(new SecretClient(vaultUri, tokenCredential), keyVault, subscription, cancellationToken).ToListAsync(cancellationToken).AsTask()
             };
 
             var results = await Task.WhenAll(tasks);
@@ -59,9 +61,8 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
 
     private static async IAsyncEnumerable<CredentialRecord> EnumerateVaultCertificatesAsync(
         CertificateClient certificateClient,
-        string vaultName,
+        KeyVaultResource keyVault,
         SubscriptionData subscription,
-        string vaultResourceId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         List<CredentialRecord> results = [];
@@ -77,7 +78,7 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                 {
                     results.Add(new CredentialRecord(
                         Provider: "Azure.KeyVault",
-                        Container: $"{subscription.DisplayName}/{vaultName}",
+                        Container: $"{subscription.DisplayName}/{keyVault.Data.Name}",
                         ContainerId: certificateClient.VaultUri.ToString(),
                         CredentialId: version.Id.ToString(),
                         Kind: CredentialKind.Certificate,
@@ -85,11 +86,12 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                         NotBefore: version.NotBefore,
                         ExpiresOn: version.ExpiresOn,
                         Enabled: version.Enabled.GetValueOrDefault(),
-                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{vaultResourceId}/certificates"),
+                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{keyVault.Id}/certificates"),
                         Metadata: new
                         {
-                            SubscriptionId = subscription.Id,
                             subscription.TenantId,
+                            subscription.Id.SubscriptionId,
+                            keyVault.Id.ResourceGroupName,
                             version.Tags,
                             version.X509ThumbprintString,
                             version.RecoveryLevel,
@@ -112,9 +114,8 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
 
     private static async IAsyncEnumerable<CredentialRecord> EnumerateVaultKeysAsync(
         KeyClient keyClient,
-        string vaultName,
+        KeyVaultResource keyVault,
         SubscriptionData subscription,
-        string vaultResourceId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         List<CredentialRecord> results = [];
@@ -130,7 +131,7 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                 {
                     results.Add(new CredentialRecord(
                         Provider: "Azure.KeyVault",
-                        Container: $"{subscription.DisplayName}/{vaultName}",
+                        Container: $"{subscription.DisplayName}/{keyVault.Data.Name}",
                         ContainerId: keyClient.VaultUri.ToString(),
                         CredentialId: $"{version.Name}:{version.Version}",
                         Kind: CredentialKind.Key,
@@ -138,11 +139,12 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                         NotBefore: version.NotBefore,
                         ExpiresOn: version.ExpiresOn,
                         Enabled: version.Enabled.GetValueOrDefault(),
-                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{vaultResourceId}/keys"),
+                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{keyVault.Id}/keys"),
                         Metadata: new
                         {
-                            SubscriptionId = subscription.Id,
                             subscription.TenantId,
+                            SubscriptionId = subscription.Id,
+                            keyVault.Id.ResourceGroupName,
                             version.Tags,
                             version.RecoveryLevel,
                         }
@@ -164,9 +166,8 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
 
     private static async IAsyncEnumerable<CredentialRecord> EnumerateVaultSecretsAsync(
         SecretClient secretClient,
-        string vaultName,
+        KeyVaultResource keyVault,
         SubscriptionData subscription,
-        string vaultResourceId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         List<CredentialRecord> results = [];
@@ -182,7 +183,7 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                 {
                     results.Add(new CredentialRecord(
                         Provider: "Azure.KeyVault",
-                        Container: $"{subscription.DisplayName}/{vaultName}",
+                        Container: $"{subscription.DisplayName}/{keyVault.Data.Name}",
                         ContainerId: secretClient.VaultUri.ToString(),
                         CredentialId: $"{version.Name}:{version.Version}",
                         Kind: CredentialKind.Secret,
@@ -190,11 +191,12 @@ public class AzureKeyVaultDiscoveryCredentialProvider(ArmClient armClient, Token
                         NotBefore: version.NotBefore,
                         ExpiresOn: version.ExpiresOn,
                         Enabled: version.Enabled.GetValueOrDefault(),
-                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{vaultResourceId}/secrets"),
+                        CredentialUri: new($"https://portal.azure.com/#@{subscription.TenantId}/resource{keyVault.Id}/secrets"),
                         Metadata: new
                         {
-                            SubscriptionId = subscription.Id,
                             subscription.TenantId,
+                            SubscriptionId = subscription.Id,
+                            keyVault.Id.ResourceGroupName,
                             version.Tags,
                             version.RecoveryLevel,
                         }

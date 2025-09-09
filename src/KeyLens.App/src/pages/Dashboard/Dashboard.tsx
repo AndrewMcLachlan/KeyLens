@@ -12,19 +12,21 @@ export const Dashboard = () => {
         <Page title="Dashboard">
             <SectionTable header="Credentials">
                 <thead>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Expiry</th>
-                    <th>Expires</th>
-                    <th>Start</th>
-                    <th>Provider</th>
-                    <th>Source</th>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Expiry</th>
+                        <th>Expires</th>
+                        <th>Start</th>
+                        <th>Provider</th>
+                        <th>Source</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {credentials?.map(c => (
                         <CredentialRow key={c.credentialId} credential={c} />
                     ))}
-                    {isLoading && Array.from({ length: 10  }).map((_, i) => <tr key={i}><td colSpan={7}></td></tr>)}
+                    {isLoading && Array.from({ length: 10 }).map((_, i) => <tr key={i}><td colSpan={7}></td></tr>)}
                 </tbody>
             </SectionTable>
         </Page>
