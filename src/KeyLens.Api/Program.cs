@@ -5,6 +5,7 @@ using KeyLens;
 using KeyLens.Api;
 using KeyLens.Api.Handlers;
 using KeyLens.Api.Models;
+using KeyLens.Api.Services;
 using KeyLens.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -43,6 +44,9 @@ static void AddServices(WebApplicationBuilder builder)
         options.GroupNameFormat = "'v'VVV";
         options.SubstituteApiVersionInUrl = true;
     });
+
+    builder.Services.AddNotificationBroker();
+    builder.Services.AddHostedService<MonitorService>();
 
     builder.Services.AddKeyVaultCredentialProviders();
     builder.Services.AddEntraIdCredentialProviders();

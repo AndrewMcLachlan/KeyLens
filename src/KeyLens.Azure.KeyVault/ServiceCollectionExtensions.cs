@@ -3,7 +3,6 @@ using Azure.ResourceManager;
 using KeyLens;
 using KeyLens.Azure.KeyVault;
 using KeyLens.Options;
-using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,7 +12,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddKeyVaultCredentialProviders(this IServiceCollection services)
     {
-        services.AddScoped<ICredentialProvider, AzureKeyVaultDiscoveryCredentialProvider>(provider =>
+        services.AddKeyedScoped<ICredentialProvider>(ServiceKeys.Web, (provider, key) =>
         {
             var options = provider.GetRequiredService<IOptions<OAuthOptions>>();
             var accessTokenProvider = provider.GetRequiredService<IAccessTokenProvider>();
@@ -38,6 +37,16 @@ public static class ServiceCollectionExtensions
 
             var armClient = new ArmClient(credential);
 
+            return new AzureKeyVaultDiscoveryCredentialProvider(armClient, credential, logger);
+        });
+
+        services.AddKeyedSingleton<ICredentialProvider>(ServiceKeys.Universal, (provider, key) =>
+        {
+            var credential = new DefaultAzureCredential();
+
+            var armClient = new ArmClient(credential);
+
+            var logger = provider.GetRequiredService<ILogger<AzureKeyVaultDiscoveryCredentialProvider>>();
             return new AzureKeyVaultDiscoveryCredentialProvider(armClient, credential, logger);
         });
 

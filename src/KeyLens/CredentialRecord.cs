@@ -12,4 +12,7 @@ public sealed record CredentialRecord(
     bool Enabled,
     Uri? CredentialUri = null, // link to portal or other UI
     dynamic? Metadata = null
-);
+)
+{
+    public override string ToString() => $"{Provider}:{ContainerId}:{CredentialId}";
+}

@@ -10,11 +10,9 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddEntraIdCredentialProviders(this IServiceCollection services, TokenCredential ? tokenCredential = null)
+    public static IServiceCollection AddEntraIdCredentialProviders(this IServiceCollection services)
     {
-        var credential = tokenCredential ?? new DefaultAzureCredential();
-
-        services.AddScoped<ICredentialProvider>(provider =>
+        services.AddKeyedScoped<ICredentialProvider>(ServiceKeys.Web, (provider, key) =>
         {
             var options = provider.GetRequiredService<IOptions<OAuthOptions>>();
             var accessTokenProvider = provider.GetRequiredService<IAccessTokenProvider>();
@@ -30,6 +28,12 @@ public static class ServiceCollectionExtensions
                 options: new());
 
             return new AzureEntraIdDiscoveryCredentialProvider(credential, logger);
+        });
+
+        services.AddKeyedSingleton<ICredentialProvider>(ServiceKeys.Universal, (provider, key) =>
+        {
+            var logger = provider.GetRequiredService<ILogger<AzureEntraIdDiscoveryCredentialProvider>>();
+            return new AzureEntraIdDiscoveryCredentialProvider(new DefaultAzureCredential(), logger);
         });
 
         return services;
