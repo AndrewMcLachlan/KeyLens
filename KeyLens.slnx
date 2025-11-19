@@ -5,6 +5,8 @@
   </Folder>
   <Folder Name="/.github/workflows/">
     <File Path=".github/workflows/build.yml" />
+    <File Path=".github/workflows/dependabot-autoapprove.yml" />
+    <File Path=".github/workflows/dependabot-automerge.yml" />
   </Folder>
   <Folder Name="/Config/">
     <File Path=".dockerignore" />
