@@ -77,7 +77,7 @@ static void AddApp(WebApplication app)
     app.UseAuthentication();
     app.UseAuthorization();
 
-    var api = app.NewVersionedApi().MapGroup($"{ApiPrefix}/v{{version:apiVersion}}").WithOpenApi();
+    var api = app.NewVersionedApi().MapGroup($"{ApiPrefix}/v{{version:apiVersion}}");
 
     var v1 = api.HasApiVersion(1.0);
 
