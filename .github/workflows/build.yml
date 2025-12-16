@@ -58,7 +58,7 @@ jobs:
     - name: Copy App
       run: cp -r src/KeyLens.App/dist ${{ github.workspace }}/publish/wwwroot
     - name: Upload Artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: publish
         path: ${{ github.workspace }}/publish
