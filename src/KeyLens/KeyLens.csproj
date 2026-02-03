@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Asm.OAuth" Version="3.6.754" />
+    <PackageReference Include="Asm.OAuth" Version="3.6.762" />
   </ItemGroup>
 
 </Project>
