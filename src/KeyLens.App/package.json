@@ -12,19 +12,20 @@
     "generate": "openapi-ts"
   },
   "dependencies": {
-    "@andrewmclachlan/moo-app": "^4.1.31",
-    "@andrewmclachlan/moo-ds": "^4.1.31",
+    "@andrewmclachlan/moo-app": "^5.0.57",
+    "@andrewmclachlan/moo-ds": "^5.0.57",
     "@azure/msal-browser": "^5.1.0",
     "@azure/msal-react": "^5.0.4",
     "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-router": "^1.162.8",
     "luxon": "^3.7.2",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.0"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@hey-api/openapi-ts": "^0.93.0",
+    "@tanstack/router-plugin": "^1.163.3",
     "@types/luxon": "^3.7.1",
     "@types/node": "^25",
     "@types/react": "^19.2.14",
