@@ -1,0 +1,153 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Asm.KeyLens.Api | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/config": {
+      "get": {
+        "tags": [
+          "GetConfigHandler"
+        ],
+        "summary": "Get API configuration",
+        "description": "Get configuration information for the API.",
+        "operationId": "GetConfig",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Config"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/credentials": {
+      "get": {
+        "tags": [
+          "GetCredentialsHandler"
+        ],
+        "summary": "Get credentials",
+        "description": "Get a list of credentials from all configured providers.",
+        "operationId": "GetCredentials",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CredentialRecord"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Config": {
+        "required": [
+          "audience",
+          "scope"
+        ],
+        "type": "object",
+        "properties": {
+          "audience": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      },
+      "CredentialKind": {
+        "enum": [
+          "Secret",
+          "Certificate",
+          "Password",
+          "Key"
+        ]
+      },
+      "CredentialRecord": {
+        "required": [
+          "provider",
+          "container",
+          "containerId",
+          "credentialId",
+          "kind",
+          "name",
+          "notBefore",
+          "expiresOn",
+          "enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "container": {
+            "type": "string"
+          },
+          "containerId": {
+            "type": "string"
+          },
+          "credentialId": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CredentialKind"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "notBefore": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "expiresOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "credentialUri": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uri"
+          },
+          "metadata": { }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "GetConfigHandler"
+    },
+    {
+      "name": "GetCredentialsHandler"
+    }
+  ]
+}
