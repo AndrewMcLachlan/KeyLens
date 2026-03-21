@@ -48,10 +48,14 @@ export default defineConfig({
         }),
         plugin(),
     ],
+    build: {
+        cssMinify: "esbuild",
+    },
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
-        }
+        },
+        tsconfigPaths: true,
     },
     server: {
         proxy: {
