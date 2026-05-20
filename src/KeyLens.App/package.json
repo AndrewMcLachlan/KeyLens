@@ -24,21 +24,21 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@hey-api/openapi-ts": "^0.97.1",
-    "@tanstack/router-plugin": "^1.167.35",
+    "@hey-api/openapi-ts": "^0.97.2",
+    "@tanstack/router-plugin": "^1.168.6",
     "@types/luxon": "^3.7.1",
     "@types/node": "^25",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "esbuild": "^0.28.0",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.59.3",
-    "vite": "^8.0.12"
+    "typescript-eslint": "^8.59.4",
+    "vite": "^8.0.13"
   },
   "overrides": {
     "eslint": "$eslint"
