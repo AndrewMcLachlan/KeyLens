@@ -109,7 +109,7 @@ jobs:
       group: keylens-deploy-group
       cancel-in-progress: true
     needs: [build, docker-push]
-    if: (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && github.ref == 'refs/heads/main')
+    if: (false && github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && github.ref == 'refs/heads/main')
     uses: AndrewMcLachlan/actions/.github/workflows/deploy-azure.yml@v4
     with:
       environment: Staging
