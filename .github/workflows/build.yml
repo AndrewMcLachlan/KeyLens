@@ -46,6 +46,14 @@ jobs:
         cache-dependency-path: 'src/KeyLens.App/package-lock.json'
         registry-url: "https://npm.pkg.github.com"
     - name: Publish
+      # OpenAPI document generation starts the app, which fails fast when OAuth
+      # is not configured. These placeholders exist only to get the host to start;
+      # real values come from configuration at deployment time.
+      env:
+        OAuth__TenantId: 00000000-0000-0000-0000-000000000000
+        OAuth__Domain: https://login.microsoftonline.com
+        OAuth__Audience: api://keylens-build
+        OAuth__ClientId: 00000000-0000-0000-0000-000000000000
       run: dotnet publish src/KeyLens.Api/KeyLens.Api.csproj --output ${{ github.workspace }}/publish --configuration Release --p:Version=${{ steps.set-version-number.outputs.version }} --p:FileVersion=${{ steps.set-version-number.outputs.version }} --no-restore
     - name: Install App dependencies
       env:
