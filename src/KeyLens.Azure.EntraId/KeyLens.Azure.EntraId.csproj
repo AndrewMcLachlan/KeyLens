@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Core" Version="1.63.0" />
+    <PackageReference Include="Azure.Core" Version="1.64.0" />
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
-    <PackageReference Include="Microsoft.Graph" Version="6.8.0" />
+    <PackageReference Include="Microsoft.Graph" Version="6.9.0" />
   </ItemGroup>
 
   <ItemGroup>
