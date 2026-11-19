@@ -7,8 +7,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Asm.AspNetCore.Api" Version="5.1.75" />
-    <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.6.5" />
-    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Hosting.JavaScript" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="17.0.0" />
     <PackageVersion Include="Asm" Version="5.1.75" />
     <PackageVersion Include="Asm.AspNetCore" Version="5.1.75" />
     <PackageVersion Include="Asm.AspNetCore.Modules" Version="5.1.75" />
