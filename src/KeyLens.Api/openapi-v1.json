@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Asm.KeyLens.Api | v1",
     "version": "1.0.0"
@@ -27,14 +27,12 @@
         }
       }
     },
-    "/api/v1/credentials": {
+    "/api/v1/connections": {
       "get": {
         "tags": [
-          "GetCredentialsHandler"
+          "Connections"
         ],
-        "summary": "Get credentials",
-        "description": "Get a list of credentials from all configured providers.",
-        "operationId": "GetCredentials",
+        "operationId": "get-connections",
         "responses": {
           "200": {
             "description": "OK",
@@ -43,11 +41,181 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/CredentialRecord"
+                    "$ref": "#/components/schemas/Connection"
                   }
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Connections"
+        ],
+        "operationId": "create-connection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/connections/{id}": {
+      "get": {
+        "tags": [
+          "Connections"
+        ],
+        "operationId": "get-connection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Connections"
+        ],
+        "operationId": "update-connection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Secret",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Connections"
+        ],
+        "operationId": "delete-connection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/credentials": {
+      "get": {
+        "tags": [
+          "Credentials"
+        ],
+        "operationId": "get-credentials",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialsResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -67,6 +235,106 @@
           },
           "scope": {
             "type": "string"
+          }
+        }
+      },
+      "Connection": {
+        "required": [
+          "name",
+          "type",
+          "config"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ConnectionType"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "config": { },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastScan": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastScanError": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasSecret": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ConnectionError": {
+        "required": [
+          "connectionId",
+          "connectionName",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "connectionName": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ConnectionType": {
+        "enum": [
+          "Azure",
+          "Aws",
+          "HashiCorpVault",
+          "TlsEndpoint"
+        ]
+      },
+      "Create": {
+        "required": [
+          "name",
+          "type",
+          "config",
+          "secret"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ConnectionType"
+          },
+          "config": { },
+          "secret": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
           }
         }
       },
@@ -139,15 +407,39 @@
           },
           "metadata": { }
         }
+      },
+      "CredentialsResult": {
+        "required": [
+          "credentials",
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "credentials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CredentialRecord"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionError"
+            }
+          }
+        }
       }
     }
   },
   "tags": [
     {
-      "name": "GetConfigHandler"
+      "name": "Connections"
     },
     {
-      "name": "GetCredentialsHandler"
+      "name": "Credentials"
+    },
+    {
+      "name": "GetConfigHandler"
     }
   ]
 }
