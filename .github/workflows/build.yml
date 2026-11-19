@@ -26,7 +26,7 @@ jobs:
       uses: actions/setup-dotnet@v6
 
       with:
-        dotnet-version: 10.x
+        dotnet-version: 11.x
         source-url: https://nuget.pkg.github.com/AndrewMcLachlan/index.json
       env:
         NUGET_AUTH_TOKEN: ${{secrets.CROSS_REPO_PACKAGE_TOKEN}}
@@ -41,20 +41,21 @@ jobs:
     - name: Setup node and npm
       uses: actions/setup-node@v7
       with:
-        node-version: 22
+        node-version: 24
         cache: npm
         cache-dependency-path: 'src/KeyLens.App/package-lock.json'
         registry-url: "https://npm.pkg.github.com"
     - name: Publish
-      # OpenAPI document generation starts the app, which fails fast when OAuth
-      # is not configured. These placeholders exist only to get the host to start;
-      # real values come from configuration at deployment time.
-      env:
-        OAuth__TenantId: 00000000-0000-0000-0000-000000000000
-        OAuth__Domain: https://login.microsoftonline.com
-        OAuth__Audience: api://keylens-build
-        OAuth__ClientId: 00000000-0000-0000-0000-000000000000
       run: dotnet publish src/KeyLens.Api/KeyLens.Api.csproj --output ${{ github.workspace }}/publish --configuration Release --p:Version=${{ steps.set-version-number.outputs.version }} --p:FileVersion=${{ steps.set-version-number.outputs.version }} --no-restore
+    - name: Test
+      run: dotnet test KeyLens.slnx --configuration Release
+    - name: Build database project
+      run: dotnet build src/KeyLens.Database/KeyLens.Database.sqlproj --configuration Release
+    - name: Upload dacpac
+      uses: actions/upload-artifact@v7
+      with:
+        name: database
+        path: src/KeyLens.Database/bin/Release/*.dacpac
     - name: Install App dependencies
       env:
         NODE_AUTH_TOKEN: ${{ secrets.CROSS_REPO_PACKAGE_TOKEN }}

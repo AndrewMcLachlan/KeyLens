@@ -9,6 +9,34 @@ export type Config = {
     scope: string;
 };
 
+export type Connection = {
+    id?: string;
+    name: string;
+    type: ConnectionType;
+    enabled?: boolean;
+    config: unknown;
+    created?: string;
+    lastScan?: null | string;
+    lastScanError?: null | string;
+    hasSecret?: boolean;
+};
+
+export type ConnectionError = {
+    connectionId: string;
+    connectionName: string;
+    error: string;
+};
+
+export type ConnectionType = 'Azure' | 'Aws' | 'HashiCorpVault' | 'TlsEndpoint';
+
+export type Create = {
+    name: string;
+    type: ConnectionType;
+    config: unknown;
+    secret: null | string;
+    enabled?: boolean;
+};
+
 export type CredentialKind = 'Secret' | 'Certificate' | 'Password' | 'Key';
 
 export type CredentialRecord = {
@@ -23,6 +51,11 @@ export type CredentialRecord = {
     enabled: boolean;
     credentialUri?: null | string;
     metadata?: unknown;
+};
+
+export type CredentialsResult = {
+    credentials: Array<CredentialRecord>;
+    errors: Array<ConnectionError>;
 };
 
 export type GetConfigData = {
@@ -41,6 +74,110 @@ export type GetConfigResponses = {
 
 export type GetConfigResponse = GetConfigResponses[keyof GetConfigResponses];
 
+export type GetConnectionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/connections';
+};
+
+export type GetConnectionsErrors = {
+    /**
+     * Not Found
+     */
+    404: unknown;
+};
+
+export type GetConnectionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<Connection>;
+};
+
+export type GetConnectionsResponse = GetConnectionsResponses[keyof GetConnectionsResponses];
+
+export type CreateConnectionData = {
+    body: Create;
+    path?: never;
+    query?: never;
+    url: '/api/v1/connections';
+};
+
+export type CreateConnectionResponses = {
+    /**
+     * Created
+     */
+    201: Connection;
+};
+
+export type CreateConnectionResponse = CreateConnectionResponses[keyof CreateConnectionResponses];
+
+export type DeleteConnectionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/connections/{id}';
+};
+
+export type DeleteConnectionResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteConnectionResponse = DeleteConnectionResponses[keyof DeleteConnectionResponses];
+
+export type GetConnectionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/connections/{id}';
+};
+
+export type GetConnectionErrors = {
+    /**
+     * Not Found
+     */
+    404: unknown;
+};
+
+export type GetConnectionResponses = {
+    /**
+     * OK
+     */
+    200: Connection;
+};
+
+export type GetConnectionResponse = GetConnectionResponses[keyof GetConnectionResponses];
+
+export type UpdateConnectionData = {
+    body: unknown;
+    path: {
+        id: string;
+    };
+    query: {
+        Name: string;
+        Secret?: string;
+        Enabled: boolean;
+    };
+    url: '/api/v1/connections/{id}';
+};
+
+export type UpdateConnectionResponses = {
+    /**
+     * OK
+     */
+    200: Connection;
+};
+
+export type UpdateConnectionResponse = UpdateConnectionResponses[keyof UpdateConnectionResponses];
+
 export type GetCredentialsData = {
     body?: never;
     path?: never;
@@ -48,11 +185,18 @@ export type GetCredentialsData = {
     url: '/api/v1/credentials';
 };
 
+export type GetCredentialsErrors = {
+    /**
+     * Not Found
+     */
+    404: unknown;
+};
+
 export type GetCredentialsResponses = {
     /**
      * OK
      */
-    200: Array<CredentialRecord>;
+    200: CredentialsResult;
 };
 
 export type GetCredentialsResponse = GetCredentialsResponses[keyof GetCredentialsResponses];

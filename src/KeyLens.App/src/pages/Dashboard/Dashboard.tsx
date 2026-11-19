@@ -2,14 +2,15 @@ import { Page } from "@andrewmclachlan/moo-app";
 import { useGetCredentials } from "./hooks/useGetCredentials";
 import { SectionTable } from "@andrewmclachlan/moo-ds";
 import { CredentialRow } from "./components/CredentialRow";
-
+import { ConnectionErrors } from "./components/ConnectionErrors";
 
 export const Dashboard = () => {
 
-    const { data: credentials, isLoading } = useGetCredentials();
+    const { data, isLoading } = useGetCredentials();
 
     return (
         <Page title="Dashboard">
+            <ConnectionErrors errors={data?.errors} />
             <SectionTable header="Credentials">
                 <thead>
                     <tr>
@@ -23,7 +24,7 @@ export const Dashboard = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {credentials?.map(c => (
+                    {data?.credentials?.map(c => (
                         <CredentialRow key={c.credentialId} credential={c} />
                     ))}
                     {isLoading && Array.from({ length: 10 }).map((_, i) => <tr key={i}><td colSpan={7}></td></tr>)}

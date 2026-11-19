@@ -1,13 +1,11 @@
-﻿namespace KeyLens.Api.Services;
+using KeyLens.Entities;
 
-public class MonitorService(
-[FromKeyedServices(ServiceKeys.Universal)] IEnumerable<ICredentialProvider> credentialProviders,
-INotificationBroker notificationBroker,
-ILogger<MonitorService> logger) : BackgroundService
+namespace KeyLens.Api.Services;
+
+public class MonitorService(IServiceScopeFactory scopeFactory, ILogger<MonitorService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Modern approach with PeriodicTimer
         using var timer = new PeriodicTimer(TimeSpan.FromDays(1));
 
         try
@@ -19,47 +17,55 @@ ILogger<MonitorService> logger) : BackgroundService
         }
         catch (OperationCanceledException)
         {
-            // Service is stopping
         }
     }
 
     private async Task DoWorkAsync(CancellationToken cancellationToken)
     {
-        var results = new List<CredentialRecord>();
+        using var scope = scopeFactory.CreateScope();
 
-        var tasks = credentialProviders.Select(async provider =>
+        var repository = scope.ServiceProvider.GetRequiredService<IConnectionRepository>();
+        var scanner = scope.ServiceProvider.GetRequiredService<ConnectionScanner>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var notificationBroker = scope.ServiceProvider.GetRequiredService<INotificationBroker>();
+
+        var connections = (await repository.GetAllEnabledAsync(cancellationToken)).ToList();
+
+        logger.LogInformation("Scanning {count} enabled connections", connections.Count);
+
+        var scannedAt = DateTimeOffset.UtcNow;
+        var credentials = new List<CredentialRecord>();
+
+        foreach (var connection in connections)
         {
-            var providerResults = new List<CredentialRecord>();
-            await foreach (var credential in provider.EnumerateAsync(cancellationToken))
+            var result = await scanner.ScanAsync(connection, cancellationToken);
+
+            if (result.IsSuccess)
             {
-                providerResults.Add(credential);
+                connection.RecordScanSuccess(scannedAt);
+                credentials.AddRange(result.Credentials);
             }
-            return providerResults;
-        });
-
-        var allProviderResults = await Task.WhenAll(tasks);
-
-        foreach (var providerResults in allProviderResults)
-        {
-            results.AddRange(providerResults);
+            else
+            {
+                connection.RecordScanFailure(scannedAt, result.Error!);
+            }
         }
 
-        var cleanedResults = results
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var expiring = credentials
             .Where(c => c.ExpiresOn.HasValue && (
-            c.ExpiresOn.Value.UtcDateTime.Date == DateTime.UtcNow.Date.AddDays(30) ||
-            c.ExpiresOn.Value.UtcDateTime.Date == DateTime.UtcNow.Date.AddDays(7) ||
-            c.ExpiresOn.Value.UtcDateTime.Date <= DateTime.UtcNow.Date.AddDays(3)))
-            .DistinctBy(c => c.CredentialId);
+                c.ExpiresOn.Value.UtcDateTime.Date == DateTime.UtcNow.Date.AddDays(30) ||
+                c.ExpiresOn.Value.UtcDateTime.Date == DateTime.UtcNow.Date.AddDays(7) ||
+                c.ExpiresOn.Value.UtcDateTime.Date <= DateTime.UtcNow.Date.AddDays(3)))
+            .DistinctBy(c => c.CredentialId)
+            .ToList();
 
-        logger.LogInformation("Discovered {count} expiring/expired credentials", cleanedResults.Count());
+        logger.LogInformation("Discovered {count} expiring/expired credentials", expiring.Count);
 
-        foreach (var credential in cleanedResults)
+        foreach (var credential in expiring)
         {
             await notificationBroker.SendNotificationAsync(new Notification(credential), cancellationToken);
         }
-
-
-        // Your recurring work here
-        await Task.Delay(100, cancellationToken); // Simulate work
     }
 }

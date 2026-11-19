@@ -1,0 +1,20 @@
+<Project>
+  <!-- MSBuild ignores Condition on the <Project> element, so this must be conditioned on the
+       PropertyGroup to keep C#-only settings off .esproj / .sqlproj. -->
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Authors>Andrew McLachlan</Authors>
+    <Company />
+    <Copyright>© 2025-$([System.DateTime]::Now.Year) Andrew McLachlan</Copyright>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Product>KeyLens</Product>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/AndrewMcLachlan/KeyLens</RepositoryUrl>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AssemblyName>Asm.$(MSBuildProjectName)</AssemblyName>
+  </PropertyGroup>
+</Project>

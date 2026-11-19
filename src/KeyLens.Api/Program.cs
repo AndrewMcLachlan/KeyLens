@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Asm.AspNetCore.Authentication;
+using Asm.AspNetCore.Modules;
 using Asp.Versioning;
 using KeyLens;
 using KeyLens.Api;
@@ -7,6 +8,7 @@ using KeyLens.Api.Handlers;
 using KeyLens.Api.Models;
 using KeyLens.Api.Services;
 using KeyLens.Options;
+using KeyLens.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 const string ApiPrefix = "/api";
@@ -22,7 +24,11 @@ static void AddServices(WebApplicationBuilder builder)
     }
 
     builder.Services.AddHttpContextAccessor();
-    builder.Services.AddScoped<IAccessTokenProvider, HttpContextAccessTokenProvider>();
+    builder.Services.AddScoped<IUserDataProvider, UserDataProvider>();
+
+    builder.RegisterModules();
+
+    builder.Services.AddPostieEndpointDispatcher();
 
     builder.Services.ConfigureHttpJsonOptions(options =>
     {
@@ -47,6 +53,8 @@ static void AddServices(WebApplicationBuilder builder)
 
     builder.Services.AddNotificationBroker();
     builder.Services.AddHostedService<MonitorService>();
+
+    builder.Services.AddKeyLensInfrastructure(builder.Configuration);
 
     builder.Services.AddKeyVaultCredentialProviders();
     builder.Services.AddEntraIdCredentialProviders();
@@ -88,12 +96,7 @@ static void AddApp(WebApplication app)
         .Produces<Config>(StatusCodes.Status200OK)
         .AllowAnonymous();
 
-    v1.MapGet("/credentials", GetCredentialsHandler.HandleAsync)
-        .WithName("GetCredentials")
-        .WithSummary("Get credentials")
-        .WithDescription("Get a list of credentials from all configured providers.")
-        .Produces<List<CredentialRecord>>(StatusCodes.Status200OK)
-        .RequireAuthorization();
+    v1.MapModuleEndpoints();
 
     app.UseSecurityHeaders();
 

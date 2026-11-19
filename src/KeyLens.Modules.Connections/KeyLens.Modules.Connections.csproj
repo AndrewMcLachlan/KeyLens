@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Postie.Cqrs.AspNetCore" />
+    <PackageReference Include="Postie.AspNetCore" />
+    <PackageReference Include="Asm.AspNetCore" />
+    <PackageReference Include="Asm.AspNetCore.Modules" />
+    <PackageReference Include="Asm.AspNetCore.Postie" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KeyLens\KeyLens.csproj" />
+    <ProjectReference Include="..\KeyLens.Security\KeyLens.Security.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Asm.KeyLens.Modules.Connections.Tests" />
+  </ItemGroup>
+
+</Project>
