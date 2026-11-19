@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetConfigData, GetConfigResponses, GetCredentialsData, GetCredentialsResponses } from './types.gen';
+import type { CreateConnectionData, CreateConnectionResponses, DeleteConnectionData, DeleteConnectionResponses, GetConfigData, GetConfigResponses, GetConnectionData, GetConnectionErrors, GetConnectionResponses, GetConnectionsData, GetConnectionsErrors, GetConnectionsResponses, GetCredentialsData, GetCredentialsErrors, GetCredentialsResponses, UpdateConnectionData, UpdateConnectionResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -29,12 +29,41 @@ export const getConfig = <ThrowOnError extends boolean = false>(options?: Option
     ...options
 });
 
-/**
- * Get credentials
- *
- * Get a list of credentials from all configured providers.
- */
-export const getCredentials = <ThrowOnError extends boolean = false>(options?: Options<GetCredentialsData, ThrowOnError>) => (options?.client ?? client).get<GetCredentialsResponses, unknown, ThrowOnError>({
+export const getConnections = <ThrowOnError extends boolean = false>(options?: Options<GetConnectionsData, ThrowOnError>) => (options?.client ?? client).get<GetConnectionsResponses, GetConnectionsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/connections',
+    ...options
+});
+
+export const createConnection = <ThrowOnError extends boolean = false>(options: Options<CreateConnectionData, ThrowOnError>) => (options.client ?? client).post<CreateConnectionResponses, unknown, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/connections',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteConnection = <ThrowOnError extends boolean = false>(options: Options<DeleteConnectionData, ThrowOnError>) => (options.client ?? client).delete<DeleteConnectionResponses, unknown, ThrowOnError>({ url: '/api/v1/connections/{id}', ...options });
+
+export const getConnection = <ThrowOnError extends boolean = false>(options: Options<GetConnectionData, ThrowOnError>) => (options.client ?? client).get<GetConnectionResponses, GetConnectionErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/connections/{id}',
+    ...options
+});
+
+export const updateConnection = <ThrowOnError extends boolean = false>(options: Options<UpdateConnectionData, ThrowOnError>) => (options.client ?? client).patch<UpdateConnectionResponses, unknown, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/connections/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getCredentials = <ThrowOnError extends boolean = false>(options?: Options<GetCredentialsData, ThrowOnError>) => (options?.client ?? client).get<GetCredentialsResponses, GetCredentialsErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/v1/credentials',
     ...options

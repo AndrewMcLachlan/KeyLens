@@ -1,0 +1,37 @@
+services:
+  keylens:
+    image: ghcr.io/andrewmclachlan/keylens:${KEYLENS_TAG:-latest}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__KeyLens: Server=db,1433;Database=keylens;User Id=sa;Password=${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD};TrustServerCertificate=True
+      KeyVault__VaultUri: ${KEYLENS_VAULT_URI:?set KEYLENS_VAULT_URI}
+      # Reaching the key vault needs an identity of its own, before any stored connection can be
+      # decrypted. A container has neither a managed identity nor a signed-in CLI, so it is supplied
+      # here for DefaultAzureCredential to pick up.
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:?set AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:?set AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET:?set AZURE_CLIENT_SECRET}
+    ports:
+      - "${KEYLENS_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD}
+    volumes:
+      - keylens-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  keylens-data:

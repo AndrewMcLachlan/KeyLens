@@ -1,16 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>67164ded-8f1f-4ddd-bdc1-42a6535735b2</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
     <SpaRoot>..\KeyLens.App</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>http://localhost:3011</SpaProxyServerUrl>
-    <AssemblyName>Asm.KeyLens.Api</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -20,18 +16,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Asm.AspNetCore.Api" Version="5.1.10" />
-    <PackageReference Include="Asp.Versioning.Http" Version="10.2.3" />
-    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.1" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageReference Include="Asm.AspNetCore.Api" />
+    <PackageReference Include="Asm.AspNetCore.Modules" />
+    <PackageReference Include="Asm.AspNetCore.Postie" />
+    <PackageReference Include="Postie.AspNetCore" />
+    <PackageReference Include="Postie.Cqrs.AspNetCore" />
+    <PackageReference Include="Asp.Versioning.Http" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
-      <Version>10.0.12</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.12">
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +40,14 @@
     <ProjectReference Include="..\KeyLens.Azure.KeyVault\KeyLens.Azure.KeyVault.csproj" />
     <ProjectReference Include="..\KeyLens.Azure.EntraId\KeyLens.Azure.EntraId.csproj" />
     <ProjectReference Include="..\KeyLens\KeyLens.csproj" />
+    <ProjectReference Include="..\KeyLens.Security\KeyLens.Security.csproj" />
+    <ProjectReference Include="..\KeyLens.Modules.Connections\KeyLens.Modules.Connections.csproj" />
+    <ProjectReference Include="..\KeyLens.Modules.Credentials\KeyLens.Modules.Credentials.csproj" />
+    <ProjectReference Include="..\KeyLens.Infrastructure\KeyLens.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Asm.Domain" />
   </ItemGroup>
 
 </Project>

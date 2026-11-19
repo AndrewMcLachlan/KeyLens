@@ -10,10 +10,14 @@
   </Folder>
   <Folder Name="/Config/">
     <File Path=".dockerignore" />
+    <File Path="docker-compose.yml" />
+    <File Path=".env.example" />
     <File Path=".editorconfig" />
     <File Path=".gitignore" />
     <File Path=".npmrc" />
     <File Path="LICENSE" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
     <File Path="NuGet.config" />
     <File Path="SECURITY.md" />
   </Folder>
@@ -22,9 +26,24 @@
     <Project Path="src/KeyLens.Azure.KeyVault/KeyLens.Azure.KeyVault.csproj" />
   </Folder>
   <Project Path="src/KeyLens.Api/KeyLens.Api.csproj" />
+  <Project Path="src/KeyLens.AppHost/KeyLens.AppHost.csproj" />
   <Project Path="src/KeyLens.App/KeyLens.App.esproj">
     <Build />
     <Deploy />
   </Project>
   <Project Path="src/KeyLens/KeyLens.csproj" />
+  <Folder Name="/Tests/">
+    <File Path="tests/Directory.Build.props" />
+    <Project Path="tests/KeyLens.Tests/KeyLens.Tests.csproj" />
+    <Project Path="tests/KeyLens.Modules.Connections.Tests/KeyLens.Modules.Connections.Tests.csproj" />
+  </Folder>
+  <Project Path="src/KeyLens.Security/KeyLens.Security.csproj" />
+  <Folder Name="/Modules/">
+    <Project Path="src/KeyLens.Modules.Connections/KeyLens.Modules.Connections.csproj" />
+    <Project Path="src/KeyLens.Modules.Credentials/KeyLens.Modules.Credentials.csproj" />
+  </Folder>
+  <Folder Name="/Data/">
+    <Project Path="src/KeyLens.Database/KeyLens.Database.sqlproj" />
+    <Project Path="src/KeyLens.Infrastructure/KeyLens.Infrastructure.csproj" />
+  </Folder>
 </Solution>

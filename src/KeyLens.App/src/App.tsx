@@ -7,7 +7,7 @@ import { routeTree } from "./routeTree.gen.ts";
 
 export const App = () => {
 
-    const [config, setConfig] = useState<any>(null);
+    const [config, setConfig] = useState<{ audience: string; scope: string } | null>(null);
 
     useEffect(() => {
         fetch('/api/v1/config').then(res => res.json()).then(c => {
