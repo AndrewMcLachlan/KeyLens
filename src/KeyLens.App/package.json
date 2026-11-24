@@ -12,11 +12,11 @@
     "generate": "openapi-ts"
   },
   "dependencies": {
-    "@andrewmclachlan/moo-app": "^5.2.418",
-    "@andrewmclachlan/moo-ds": "^5.2.418",
+    "@andrewmclachlan/moo-app": "^6.0.3",
+    "@andrewmclachlan/moo-ds": "^6.0.3",
     "@azure/msal-browser": "^5.30.0",
     "@azure/msal-react": "^5.8.3",
-    "@tanstack/react-query": "^5.108.0",
+    "@tanstack/react-query": "^5.108.2",
     "@tanstack/react-router": "^1.170.42",
     "luxon": "^3.7.2",
     "react": "^19.3.1",
